@@ -1,0 +1,74 @@
+---
+title: "GLG 803 Homework 1: Reading and Writing Data into Dataframes"
+output: html_notebook
+author: Jake Roush
+---
+
+
+## 1) Reading in Odyssey datafile and cleaning up
+```{r eval=TRUE}
+# Reading in .csv  Odyssey data file
+# Skipping first 6 lines - only site information
+raw_data <- read.csv("S:/Users/roushjac/Misc/Class/GLG 803/Spring-2018/Homework/Homework_1/38085_001.PRN", skip = 6, as.is = c(1:7))
+raw_data$X.2 <- NULL
+# Renaming columns to legible names
+var_names <- c("Scan_Num","Date_Time","Temp_Raw","Temp_Calib","Pres_Raw","Pres_Calib")
+colnames(raw_data) <- var_names
+# Deleting extra row
+raw_data <- raw_data[-c(1), ]
+```
+
+## 2) Converting to appropriate dataypes
+```{r eval=TRUE}
+# Converting excel datetime to seconds before converting to R datetime - don't know why it needs seconds but it works???
+raw_data$Date_Time <- as.POSIXct(((raw_data$Date_Time)*(60*60*24)), origin="1899-12-30", tz='GMT')
+raw_data$Temp_Raw <- as.numeric(raw_data$Temp_Raw)
+raw_data$Temp_Calib <- as.numeric(raw_data$Temp_Calib)
+raw_data$Pres_Raw <- as.numeric(raw_data$Pres_Raw)
+raw_data$Pres_Calib <- as.numeric(raw_data$Pres_Calib)
+```
+
+## 3) Head of the Odyssey dataframe
+
+```{r eval=TRUE}
+head(raw_data)
+```
+
+## 4, 5) Converting calibrated pressure from ft H2O to mm H2O, and temperature from C to F
+
+```{r eval=TRUE}
+FtToMm <- 304.8
+raw_data$Pres_Ft <- raw_data$Pres_Calib / FtToMm
+raw_data$Temp_F <- raw_data$Temp_Calib * (9/5) * 32
+```
+
+## 6) Opening native-format reference file
+
+```{r eval=TRUE}
+ref_data <- load("S:/Users/roushjac/Misc/Class/GLG 803/Spring-2018/Homework/Homework_1/reference_data.RData")
+```
+
+## 7) Sanity checks:
+
+Comparing lengths of my file with reference file:
+```{r eval=TRUE}
+nrow(raw_data) # my data
+nrow(dfReference) # reference data
+```
+
+Comparing mean values of pressure fields in ft H2O:
+```{r eval=TRUE}
+mean(raw_data$Pres_Ft) # my data
+mean(dfReference$Pressure_ft) # reference data
+```
+
+Comparing first dates of both dataframes:
+```{r eval=TRUE}
+raw_data$Date_Time[1] # my data
+dfReference$Datetime[1] # reference data
+```
+
+## 8) Exporting final .csv
+```{r eval=TRUE}
+write.csv(raw_data, file = "S:/Users/roushjac/Misc/Class/GLG 803/Spring-2018/Homework/Homework_1/Roush_HW1/gauge_data.csv")
+```
